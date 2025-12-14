@@ -1,26 +1,27 @@
 # Core dependencies
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-pydantic==2.5.0
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+pydantic==2.10.3
+pydantic-settings==2.6.1
 
 # Web scraping essentials
-requests==2.31.0
-beautifulsoup4==4.12.2
-feedparser==6.0.10
+requests==2.32.3
+beautifulsoup4==4.12.3
+feedparser==6.0.11
 
 # AI Integration (Google Gemini)
-google-generativeai==0.3.2
+google-generativeai==0.8.3
 
 # Async Processing
-aiohttp==3.9.1
+aiohttp==3.11.10
 
 # Configuration and Utilities
 python-decouple==3.8
-python-slugify==8.0.1
+python-slugify==8.0.4
 
 # Monitoring and Logging
 loguru==0.7.2
 
 # Testing (optional for production)
-pytest==7.4.3
-httpx==0.25.2
+pytest==8.3.4
+httpx==0.28.1
