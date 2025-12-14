@@ -1,28 +1,23 @@
-from typing import Type
-from app.models.source import Source
-from .base_scraper import BaseScraper
+from typing import Type, Dict, Any, List
 from .rss_scraper import RSScraper
-from .html_scraper import HTMLScraper
-from .event_scraper import EventScraper
 
 class ScraperFactory:
     """
-    Factory para criar scrapers baseado no tipo da fonte.
+    Factory stateless para criar scrapers sem dependências de banco.
     """
     
     _scrapers = {
         'rss': RSScraper,
-        'html': HTMLScraper,
-        'event': EventScraper,
     }
     
     @classmethod
-    def create_scraper(cls, source: Source) -> BaseScraper:
+    def create_scraper(cls, scraper_type: str, config: Dict[str, Any]) -> 'BaseScraper':
         """
-        Cria o scraper apropriado para a fonte.
+        Cria o scraper apropriado com configuração direta.
         
         Args:
-            source: Instância da fonte com configurações
+            scraper_type: Tipo do scraper ('rss', 'html', etc)
+            config: Configuração do scraper (ex: {'feed_urls': [...]})
             
         Returns:
             Instância do scraper apropriado
@@ -30,13 +25,11 @@ class ScraperFactory:
         Raises:
             ValueError: Se o tipo do scraper não for suportado
         """
-        scraper_type = source.scraper_type
-        
         if scraper_type not in cls._scrapers:
             raise ValueError(f"Tipo de scraper não suportado: {scraper_type}")
             
         scraper_class = cls._scrapers[scraper_type]
-        return scraper_class(source)
+        return scraper_class(config)
     
     @classmethod
     def get_available_types(cls) -> list:

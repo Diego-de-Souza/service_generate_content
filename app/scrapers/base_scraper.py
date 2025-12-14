@@ -6,18 +6,17 @@ import time
 import random
 from loguru import logger
 from app.core.config import settings
-from app.models.source import Source
 
 class BaseScraper(ABC):
     """
-    Classe base para todos os scrapers.
+    Classe base para todos os scrapers - versão stateless.
     Implementa funcionalidades comuns como rate limiting, headers, etc.
     """
     
-    def __init__(self, source: Source):
-        self.source = source
+    def __init__(self, config: Dict[str, Any]):
+        self.config = config
         self.session = None
-        self.user_agents = settings.USER_AGENTS.split(',')
+        self.user_agents = [settings.USER_AGENTS] if isinstance(settings.USER_AGENTS, str) else settings.USER_AGENTS
         
     async def __aenter__(self):
         self.session = aiohttp.ClientSession(
@@ -42,10 +41,10 @@ class BaseScraper(ABC):
         }
         
     async def _rate_limit(self):
-        """Implementa rate limiting baseado na configuração da fonte"""
+        """Implementa rate limiting baseado nas configurações do app"""
         delay = random.uniform(
-            self.source.delay_between_requests,
-            self.source.delay_between_requests * 2
+            settings.SCRAPING_DELAY_MIN,
+            settings.SCRAPING_DELAY_MAX
         )
         await asyncio.sleep(delay)
         

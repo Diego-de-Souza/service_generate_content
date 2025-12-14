@@ -16,8 +16,8 @@ class RSScraper(BaseScraper):
         articles = []
         
         try:
-            # URLs de feeds configuradas na fonte
-            feed_urls = self.source.scraper_config.get('feed_urls', [])
+            # URLs de feeds configuradas diretamente
+            feed_urls = self.config.get('feed_urls', [])
             
             for feed_url in feed_urls:
                 logger.info(f"Processando feed: {feed_url}")
