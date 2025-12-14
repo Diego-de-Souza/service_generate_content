@@ -7,7 +7,6 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 from loguru import logger
 import asyncio
-import redis
 import json
 import hashlib
 
@@ -29,12 +28,8 @@ class StatelessContentProcessor:
         self.relevance_scorer = RelevanceScorer()
         self.persona_manager = PersonaManager()
         
-        # Redis para cache temporário
-        try:
-            self.redis_client = redis.from_url(settings.REDIS_URL)
-        except Exception:
-            logger.warning("Redis não disponível - modo sem cache")
-            self.redis_client = None
+        # Modo completamente stateless - sem cache
+        logger.info("Iniciando em modo stateless - sem cache")
     
     async def process_batch_articles(self, 
                                    category: Optional[str] = None,
@@ -49,18 +44,7 @@ class StatelessContentProcessor:
         # Determina fontes baseado na categoria
         sources = self._get_sources_for_category(category)
         
-        # Cache key
-        cache_key = f"batch_articles:{category}:{persona}:{limit}:{min_score}"
-        
-        # Tenta cache primeiro
-        if self.redis_client:
-            try:
-                cached = self.redis_client.get(cache_key)
-                if cached:
-                    logger.info("Usando dados do cache")
-                    return json.loads(cached)
-            except Exception:
-                pass
+        # Modo stateless - sem cache, sempre processa fresh
         
         # Processa conteúdo das fontes
         all_articles = []
@@ -92,16 +76,7 @@ class StatelessContentProcessor:
         all_articles.sort(key=lambda x: x["final_score"], reverse=True)
         final_articles = all_articles[:limit]
         
-        # Salva no cache
-        if self.redis_client and final_articles:
-            try:
-                self.redis_client.setex(
-                    cache_key, 
-                    settings.CACHE_TTL_MINUTES * 60, 
-                    json.dumps(final_articles, default=str)
-                )
-            except Exception:
-                pass
+        # Modo stateless - sem cache, retorna resultados diretamente
         
         return final_articles
     
