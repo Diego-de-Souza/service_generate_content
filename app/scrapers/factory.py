@@ -1,4 +1,5 @@
 from typing import Type, Dict, Any, List
+from .base_scraper import BaseScraper
 from .rss_scraper import RSScraper
 
 class ScraperFactory:
