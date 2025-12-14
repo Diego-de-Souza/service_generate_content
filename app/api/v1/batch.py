@@ -15,6 +15,13 @@ from app.core.config import settings
 
 router = APIRouter()
 
+# Schemas de request para aceitar POST com body JSON
+class ArticlesRequest(BaseModel):
+    category: Optional[str] = None      # animes, manga, filmes, studios, games, tech
+    persona: Optional[str] = "games"    # persona editorial
+    limit: int = 20                     # máximo de artigos (limite 50)
+    min_score: float = 0.7              # score mínimo
+
 # Schemas para resposta conforme modelo do banco NestJS
 class ProcessedArticle(BaseModel):
     category: str              # animes, manga, filmes, studios, etc
@@ -59,29 +66,28 @@ class NewsBatchResponse(BaseModel):
     metadata: dict
 
 @router.post("/articles", response_model=ArticlesBatchResponse)
-async def get_processed_articles(
-    category: Optional[str] = Query(None, description="Category (animes, manga, filmes, studios, games, tech)"),
-    persona: Optional[str] = Query("games", description="Persona editorial"),
-    limit: int = Query(20, le=50, description="Máximo de artigos"),
-    min_score: float = Query(0.7, description="Score mínimo")
-):
+async def get_processed_articles(request: ArticlesRequest):
     """
     Processa e retorna artigos para a API NestJS salvar.
-    Executado a cada 3 dias.
+    Aceita parâmetros via POST JSON body.
     """
     start_time = datetime.now()
     
     try:
-        logger.info(f"Processando batch de artigos: categoria={category}, persona={persona}")
+        # Validar limit
+        if request.limit > 50:
+            request.limit = 50
+            
+        logger.info(f"Processando batch de artigos: categoria={request.category}, persona={request.persona}")
         
         processor = StatelessContentProcessor()
         
         # Processa artigos das fontes configuradas
         articles = await processor.process_batch_articles(
-            category=category,
-            persona=persona,
-            limit=limit,
-            min_score=min_score
+            category=request.category,
+            persona=request.persona,
+            limit=request.limit,
+            min_score=request.min_score
         )
         
         # Converte para formato do banco NestJS
@@ -105,9 +111,9 @@ async def get_processed_articles(
             articles=processed_articles,
             processing_time=processing_time,
             metadata={
-                "sources_used": len(settings.DEFAULT_SOURCES.get(category or "games", [])),
-                "persona_applied": persona,
-                "filters": f"category={category}, score>={min_score}",
+                "sources_used": len(settings.DEFAULT_SOURCES.get(request.category or "games", [])),
+                "persona_applied": request.persona,
+                "filters": f"category={request.category}, score>={request.min_score}",
                 "processing_date": datetime.now().isoformat()
             }
         )
