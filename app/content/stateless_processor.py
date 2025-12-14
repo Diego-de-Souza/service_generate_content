@@ -10,7 +10,7 @@ import asyncio
 import json
 import hashlib
 
-from app.scrapers.scraper_factory import ScraperFactory
+from app.scrapers.factory import ScraperFactory
 from app.ai.content_rewriter import ContentRewriter
 from app.content.relevance_scorer import RelevanceScorer
 from app.ai.persona_manager import PersonaManager
