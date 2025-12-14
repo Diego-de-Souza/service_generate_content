@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from typing import List
+from typing import List, Dict, Any, ClassVar
 import os
 
 class Settings(BaseSettings):
@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     RETURN_RAW_DATA: bool = True   # Retorna dados prontos para a API salvar
     
     # Personas Editoriais
-    PERSONAS = {
+    PERSONAS: ClassVar[Dict[str, Dict[str, str]]] = {
         "games": {
             "tone": "casual e entusiasmado",
             "style": "linguagem gamer, referências técnicas",
@@ -62,7 +62,7 @@ class Settings(BaseSettings):
     }
     
     # Fontes de Conteúdo Pré-configuradas (conforme categorias do banco)
-    DEFAULT_SOURCES = {
+    DEFAULT_SOURCES: ClassVar[Dict[str, List[Dict[str, str]]]] = {
         "animes": [
             {
                 "name": "Anime News Network",
