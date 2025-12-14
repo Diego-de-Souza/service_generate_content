@@ -60,13 +60,23 @@ class StatelessContentProcessor:
                 scraped_content = await scraper.scrape()
                 
                 # Processa cada item
+                logger.info(f"Processando {len(scraped_content)} itens da fonte {source['name']}")
                 for item in scraped_content[:10]:  # Limita por fonte
-                    processed = await self._process_single_article(
-                        item, source, persona, category
-                    )
-                    
-                    if processed and processed["final_score"] >= min_score:
-                        all_articles.append(processed)
+                    try:
+                        processed = await self._process_single_article(
+                            item, source, persona, category
+                        )
+                        
+                        if processed and processed["final_score"] >= min_score:
+                            logger.info(f"Artigo aceito com score {processed['final_score']}: {processed['title']}")
+                            all_articles.append(processed)
+                        else:
+                            if processed:
+                                logger.info(f"Artigo rejeitado com score {processed['final_score']}: {processed['title']}")
+                            else:
+                                logger.warning("Falha ao processar artigo")
+                    except Exception as e:
+                        logger.error(f"Erro processando item: {e}")
                         
             except Exception as e:
                 logger.error(f"Erro processando fonte {source['name']}: {e}")
@@ -239,20 +249,24 @@ class StatelessContentProcessor:
         """Processa um único artigo."""
         try:
             # Reescreve conteúdo com IA
+            original_title = item.get("title", "")
+            original_content = item.get("content", item.get("summary", ""))
+            full_content = f"{original_title}\n\n{original_content}"
+            
             rewritten = await self.content_rewriter.rewrite_content(
-                title=item.get("title", ""),
-                content=item.get("content", item.get("summary", "")),
-                persona=persona
+                original_content=full_content,
+                persona=persona,
+                category=category
             )
             
             # Calcula scores
-            relevance_score = self.relevance_scorer.calculate_relevance(
+            relevance_score = await self.relevance_scorer.calculate_relevance(
                 title=rewritten["title"],
                 content=rewritten["content"],
                 category=category
             )
             
-            quality_score = await self._calculate_quality_score(rewritten)
+            quality_score = self._calculate_quality_score(rewritten)
             final_score = (relevance_score * 0.6) + (quality_score * 0.4)
             
             # Gera slug
@@ -288,7 +302,7 @@ class StatelessContentProcessor:
         # Se não especificado, retorna games (padrão)
         return settings.DEFAULT_SOURCES.get("games", [])
     
-    async def _calculate_quality_score(self, content: Dict[str, str]) -> float:
+    def _calculate_quality_score(self, content: Dict[str, str]) -> float:
         """Calcula score de qualidade do conteúdo."""
         score = 0.0
         

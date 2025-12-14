@@ -4,6 +4,7 @@ from typing import List, Dict, Any
 from datetime import datetime
 from loguru import logger
 from .base_scraper import BaseScraper
+from app.core.config import settings
 
 class RSScraper(BaseScraper):
     """
@@ -19,21 +20,31 @@ class RSScraper(BaseScraper):
             # URLs de feeds configuradas diretamente
             feed_urls = self.config.get('feed_urls', [])
             
+            # Use aiohttp directly (working method)
+            import aiohttp
+            
             for feed_url in feed_urls:
                 logger.info(f"Processando feed: {feed_url}")
                 
-                # Fetch do feed
-                feed_content = await self._fetch_url(feed_url)
-                if not feed_content:
+                try:
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(feed_url) as response:
+                            if response.status == 200:
+                                feed_content = await response.text()
+                                
+                                # Parse do RSS
+                                feed = feedparser.parse(feed_content)
+                                
+                                for entry in feed.entries[:settings.MAX_ARTICLES_PER_REQUEST]:
+                                    article = await self._process_rss_entry(entry)
+                                    if article:
+                                        articles.append(article)
+                            else:
+                                logger.warning(f"Status {response.status} para {feed_url}")
+                                
+                except Exception as e:
+                    logger.error(f"Erro processando feed {feed_url}: {e}")
                     continue
-                    
-                # Parse do RSS
-                feed = feedparser.parse(feed_content)
-                
-                for entry in feed.entries[:settings.MAX_ARTICLES_PER_SCRAPE]:
-                    article = await self._process_rss_entry(entry)
-                    if article:
-                        articles.append(article)
                         
                 # Rate limiting entre feeds
                 await asyncio.sleep(1)

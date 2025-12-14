@@ -351,19 +351,31 @@ async def debug_scrape_category(category: str):
         results = []
         for source in sources:
             try:
-                scraper = processor.scraper_factory.create_scraper(
-                    scraper_type="rss",
-                    config={"feed_urls": [source["rss_url"]]}
-                )
-                
-                scraped_content = await scraper.scrape()
-                
-                results.append({
-                    "source_name": source["name"],
-                    "rss_url": source["rss_url"],
-                    "items_found": len(scraped_content),
-                    "sample_titles": [item.get("title", "N/A") for item in scraped_content[:3]]
-                })
+                # Test direct RSS fetch
+                import aiohttp
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(source["rss_url"]) as response:
+                        if response.status == 200:
+                            content = await response.text()
+                            
+                            # Parse with feedparser
+                            import feedparser
+                            feed = feedparser.parse(content)
+                            
+                            results.append({
+                                "source_name": source["name"],
+                                "rss_url": source["rss_url"],
+                                "status": response.status,
+                                "items_found": len(feed.entries),
+                                "sample_titles": [entry.get("title", "N/A") for entry in feed.entries[:3]]
+                            })
+                        else:
+                            results.append({
+                                "source_name": source["name"],
+                                "rss_url": source["rss_url"],
+                                "status": response.status,
+                                "error": f"HTTP {response.status}"
+                            })
                 
             except Exception as e:
                 results.append({

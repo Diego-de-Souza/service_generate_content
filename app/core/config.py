@@ -29,6 +29,12 @@ class Settings(BaseSettings):
     MAX_FEATURED_PER_REQUEST: int = 10   # Destaques por request
     REWRITE_SIMILARITY_THRESHOLD: float = 0.3
     
+    # Variáveis antigas para compatibilidade
+    MAX_ARTICLES_PER_SCRAPE: int = 50
+    LOG_LEVEL: str = "INFO"
+    PROMETHEUS_PORT: int = 8001
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    
     # SEO
     DEFAULT_LANGUAGE: str = "pt-BR"
     SITEMAP_ENABLED: bool = True

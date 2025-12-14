@@ -15,7 +15,8 @@ class ContentRewriter:
         # Inicializa cliente Google Gemini
         if settings.GOOGLE_API_KEY:
             genai.configure(api_key=settings.GOOGLE_API_KEY)
-            self.gemini_client = genai.GenerativeModel('gemini-1.5-flash')
+            # Usando o nome correto do modelo disponível
+            self.gemini_client = genai.GenerativeModel('gemini-flash-latest')
         else:
             logger.warning("Google API Key não configurada - ContentRewriter sem IA")
     
@@ -34,10 +35,17 @@ class ContentRewriter:
             prompt = self._build_rewrite_prompt(original_content, persona, category, target_length)
             rewritten_content = await self._rewrite_with_gemini(prompt)
             
+            # Parse o conteúdo estruturado retornado pelo Gemini
+            parsed_content = self._parse_rewritten_content(rewritten_content, original_content)
+            
             return {
-                "rewritten_text": rewritten_content,
+                "title": parsed_content["title"],
+                "content": parsed_content["content"],
+                "summary": parsed_content["summary"],
+                "keywords": parsed_content["keywords"],
+                "meta_description": parsed_content["meta_description"],
                 "original_length": len(original_content),
-                "rewritten_length": len(rewritten_content),
+                "rewritten_length": len(parsed_content["content"]),
                 "persona_used": persona,
                 "success": True
             }
@@ -66,7 +74,7 @@ class ContentRewriter:
         }
         
         return f"""
-        Reescreva completamente o seguinte conteúdo sobre {category}.
+        Reescreva completamente o seguinte conteúdo sobre {category} no formato JSON estruturado.
         
         Estilo: {persona_config['tone']}
         Linguagem: {persona_config['style']}
@@ -81,19 +89,86 @@ class ContentRewriter:
         - Use suas próprias palavras completamente
         - Adapte o tom para o público brasileiro
         - Seja original e criativo
+        
+        Responda APENAS com um JSON válido no seguinte formato:
+        {{
+            "title": "Título reescrito e otimizado para SEO",
+            "content": "Conteúdo completo reescrito",
+            "summary": "Resumo em 2-3 frases",
+            "keywords": ["palavra1", "palavra2", "palavra3"],
+            "meta_description": "Meta descrição para SEO (max 160 caracteres)"
+        }}
         """
+    
+    def _parse_rewritten_content(self, rewritten_content: str, original_content: str) -> Dict[str, Any]:
+        """Parse o conteúdo JSON retornado pelo Gemini."""
+        try:
+            import json
+            import re
+            
+            # Remove markdown code blocks se existirem
+            cleaned_content = re.sub(r'```json\n?|```\n?', '', rewritten_content.strip())
+            
+            parsed = json.loads(cleaned_content)
+            
+            # Validação básica
+            required_fields = ["title", "content", "summary", "keywords", "meta_description"]
+            for field in required_fields:
+                if field not in parsed:
+                    raise ValueError(f"Campo obrigatório '{field}' não encontrado")
+            
+            return parsed
+            
+        except Exception as e:
+            logger.error(f"Erro parsing JSON do Gemini: {e}")
+            # Fallback: extrai o que conseguir do texto
+            return self._extract_fallback_structure(rewritten_content, original_content)
+    
+    def _extract_fallback_structure(self, content: str, original_content: str) -> Dict[str, Any]:
+        """Extrai estrutura básica quando JSON parse falha."""
+        lines = content.strip().split('\n')
+        
+        # Tenta extrair título da primeira linha
+        title = lines[0] if lines else original_content.split('\n')[0][:100]
+        
+        # Remove caracteres de formatação
+        title = title.replace('#', '').replace('*', '').strip()
+        
+        # Se o conteúdo é muito longo, considera todo como conteúdo
+        full_content = '\n'.join(lines[1:]) if len(lines) > 1 else content
+        
+        words = full_content.split()
+        summary = ' '.join(words[:30]) + "..." if len(words) > 30 else full_content
+        
+        return {
+            "title": title[:200],
+            "content": full_content,
+            "summary": summary[:300],
+            "keywords": ["anime", "manga", "games", "noticias"],
+            "meta_description": summary[:160]
+        }
     
     def _fallback_rewrite(self, content: str, persona: str) -> Dict[str, Any]:
         """Fallback quando IA não está disponível."""
         # Reescrita básica sem IA
         words = content.split()
+        title = content.split('\n')[0][:100] if '\n' in content else content[:100]
+        
         if len(words) > 100:
-            content = " ".join(words[:100]) + "..."
+            content_text = " ".join(words[:100]) + "..."
+        else:
+            content_text = content
+            
+        summary = content_text[:200] + "..." if len(content_text) > 200 else content_text
         
         return {
-            "rewritten_text": f"[{persona.upper()}] {content}",
+            "title": f"[{persona.upper()}] {title}",
+            "content": content_text,
+            "summary": summary,
+            "keywords": ["anime", "manga", "games"],
+            "meta_description": summary[:160],
             "original_length": len(content),
-            "rewritten_length": len(content) + 20,
+            "rewritten_length": len(content_text),
             "persona_used": persona,
             "success": False,
             "fallback": True
