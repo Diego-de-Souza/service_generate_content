@@ -44,7 +44,7 @@ async syncArticles() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        categoria: categoria,    // animes, manga, filmes, studios, games, tech
+        category: categoria,    // animes, manga, filmes, studios, games, tech
         limit: 20,              // quantos artigos
         min_score: 0.7          // qualidade mínima
       })
@@ -55,7 +55,7 @@ async syncArticles() {
     // Salva no seu banco PostgreSQL/MySQL
     for (const article of articles) {
       await this.articlesService.create({
-        categoria: article.categoria,         // ✅ Campo do seu banco
+        category: article.category,         // ✅ Campo do seu banco
         title: article.title,                // ✅ Título do artigo
         description: article.description,    // ✅ Pequena descrição
         text: article.text,                 // ✅ Artigo completo reescrito pela IA
@@ -127,7 +127,7 @@ async syncEvents() {
 ### **Artigos** (campos do seu banco):
 ```json
 {
-  "categoria": "games",           // animes, manga, filmes, studios, games, tech
+  "category": "games",           // animes, manga, filmes, studios, games, tech
   "title": "GTA 6: Vazamentos Revelam Detalhes do Gameplay",
   "description": "Pequena descrição do artigo...",
   "text": "Texto COMPLETAMENTE reescrito pela IA para evitar copyright...",
@@ -178,7 +178,7 @@ docker-compose -f docker-compose.stateless.yml up -d
 # Teste artigos
 curl -X POST http://localhost:8000/api/v1/batch/articles \
   -H "Content-Type: application/json" \
-  -d '{"categoria": "games", "limit": 5, "min_score": 0.7}'
+  -d '{"category": "games", "limit": 5, "min_score": 0.7}'
 
 # Teste notícias
 curl -X POST http://localhost:8000/api/v1/batch/news \

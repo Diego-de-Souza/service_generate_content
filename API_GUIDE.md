@@ -36,7 +36,7 @@ POST /api/v1/batch/articles
 **Body JSON:**
 ```json
 {
-  "categoria": "animes",  // animes, manga, filmes, studios, games, tech
+  "category": "animes",  // animes, manga, filmes, studios, games, tech
   "persona": "games",    // tom editorial
   "limit": 20,           // máximo de artigos
   "min_score": 0.7       // qualidade mínima
@@ -49,7 +49,7 @@ POST /api/v1/batch/articles
   "total_processed": 15,
   "articles": [
     {
-      "categoria": "animes",
+      "category": "animes",
       "title": "Novo Episódio de Attack on Titan Quebra Recordes",
       "description": "O episódio final da série bateu recordes de audiência...",
       "text": "O tão aguardado episódio final de Attack on Titan...",
@@ -355,7 +355,7 @@ Em futuras versões, a API suportará webhooks para:
 async syncContent() {
   const response = await fetch('http://content-processor:8000/api/v1/batch/articles', {
     method: 'POST',
-    body: JSON.stringify({ categoria: 'games', limit: 20 })
+    body: JSON.stringify({ category: 'games', limit: 20 })
   });
   
   const { articles } = await response.json();
@@ -370,7 +370,7 @@ async syncContent() {
 ```bash
 curl -X POST http://localhost:8000/api/v1/batch/articles \
   -H "Content-Type: application/json" \
-  -d '{"categoria": "games", "limit": 3}'
+  -d '{"category": "games", "limit": 3}'
 ```
 
 ## 📚 **Documentação Relacionada**

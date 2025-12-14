@@ -17,7 +17,7 @@ router = APIRouter()
 
 # Schemas para resposta conforme modelo do banco NestJS
 class ProcessedArticle(BaseModel):
-    categoria: str              # animes, manga, filmes, studios, etc
+    category: str              # animes, manga, filmes, studios, etc
     title: str                  # título do artigo
     description: str            # pequena descrição do artigo
     text: str                   # artigo completo
@@ -60,7 +60,7 @@ class NewsBatchResponse(BaseModel):
 
 @router.post("/articles", response_model=ArticlesBatchResponse)
 async def get_processed_articles(
-    categoria: Optional[str] = Query(None, description="Categoria (animes, manga, filmes, studios, games, tech)"),
+    category: Optional[str] = Query(None, description="Category (animes, manga, filmes, studios, games, tech)"),
     persona: Optional[str] = Query("games", description="Persona editorial"),
     limit: int = Query(20, le=50, description="Máximo de artigos"),
     min_score: float = Query(0.7, description="Score mínimo")
@@ -88,7 +88,7 @@ async def get_processed_articles(
         processed_articles = []
         for article in articles:
             processed_articles.append(ProcessedArticle(
-                categoria=article["category"],        # animes, manga, filmes, studios, games, tech
+                category=article["category"],        # animes, manga, filmes, studios, games, tech
                 title=article["title"],              # título do artigo
                 description=article["summary"],       # pequena descrição (usando summary)
                 text=article["content"],             # artigo completo
@@ -105,9 +105,9 @@ async def get_processed_articles(
             articles=processed_articles,
             processing_time=processing_time,
             metadata={
-                "sources_used": len(settings.DEFAULT_SOURCES.get(categoria or "games", [])),
+                "sources_used": len(settings.DEFAULT_SOURCES.get(category or "games", [])),
                 "persona_applied": persona,
-                "filters": f"categoria={categoria}, score>={min_score}",
+                "filters": f"category={category}, score>={min_score}",
                 "processing_date": datetime.now().isoformat()
             }
         )

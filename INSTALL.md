@@ -65,7 +65,7 @@ docker-compose up
 # Teste endpoint de artigos
 curl -X POST "http://localhost:8000/api/v1/batch/articles" \
   -H "Content-Type: application/json" \
-  -d '{"categoria": "games", "limit": 3}'
+  -d '{"category": "games", "limit": 3}'
 
 # Acesse a documentação da API
 open http://localhost:8000/docs
@@ -117,7 +117,7 @@ O sistema vem com fontes pré-configuradas para as categorias:
 # Teste artigos de animes
 curl -X POST "http://localhost:8000/api/v1/batch/articles" \
   -H "Content-Type: application/json" \
-  -d '{"categoria": "animes", "limit": 5}'
+  -d '{"category": "animes", "limit": 5}'
 
 # Teste notícias recentes
 curl -X POST "http://localhost:8000/api/v1/batch/news" \

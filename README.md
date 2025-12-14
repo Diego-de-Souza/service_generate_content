@@ -31,7 +31,7 @@ Um **serviço stateless** que processa conteúdo geek usando IA e retorna dados 
 ## 📋 **Campos Retornados**
 
 ### Artigos
-- `categoria` (animes, manga, filmes, studios, games, tech)
+- `category` (animes, manga, filmes, studios, games, tech)
 - `title`, `description`, `text`, `summary`
 - `keyWords`, `original_url`, `source`
 
@@ -57,7 +57,7 @@ docker-compose up -d
 # Teste se está funcionando
 curl -X POST http://localhost:8000/api/v1/batch/articles \
   -H "Content-Type: application/json" \
-  -d '{"categoria": "games", "limit": 3}'
+  -d '{"category": "games", "limit": 3}'
 ```
 
 ### 3. **Manual (Python)**
@@ -94,7 +94,7 @@ Veja os guias completos:
 curl -X POST http://localhost:8000/api/v1/batch/articles \
   -H "Content-Type: application/json" \
   -d '{
-    "categoria": "games", 
+    "category": "games", 
     "limit": 10, 
     "min_score": 0.7
   }'
@@ -104,7 +104,7 @@ curl -X POST http://localhost:8000/api/v1/batch/articles \
   "total_processed": 8,
   "articles": [
     {
-      "categoria": "games",
+      "category": "games",
       "title": "Novo DLC de Elden Ring Anunciado",
       "description": "FromSoftware revela expansão...",
       "text": "Texto completo reescrito pela IA...",

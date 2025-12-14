@@ -113,7 +113,7 @@ export class ContentIntegrationService {
         
         if (!existing) {
           await this.articlesService.create({
-            categoria: article.categoria,
+            category: article.category,
             title: article.title,
             description: article.description,
             text: article.text,
@@ -224,7 +224,7 @@ export class Article {
   id: number;
 
   @Column()
-  categoria: string;  // animes, manga, filmes, studios, games, tech
+  category: string;  // animes, manga, filmes, studios, games, tech
 
   @Column()
   title: string;
@@ -405,7 +405,7 @@ docker-compose up -d
 ```bash
 curl -X POST http://localhost:8000/api/v1/batch/articles \
   -H "Content-Type: application/json" \
-  -d '{"categoria": "games", "limit": 5}'
+  -d '{"category": "games", "limit": 5}'
 ```
 
 **✅ Pronto! Sua API NestJS agora tem conteúdo geek alimentado por IA!** 🎮🤖
