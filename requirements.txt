@@ -18,6 +18,7 @@ aiohttp==3.11.10
 # Configuration and Utilities
 python-decouple==3.8
 python-slugify==8.0.4
+python-dateutil==2.9.0
 
 # Monitoring and Logging
 loguru==0.7.2
