@@ -179,6 +179,62 @@ async def get_processed_featured(
     mix_categories: bool = Query(True, description="Misturar categorias")
 ):
     """
+    Processa e retorna conteúdo em destaque para a API NestJS.
+    Apenas conteúdo de alta qualidade e relevância.
+    """
+    start_time = datetime.now()
+    
+    try:
+        logger.info(f"Processando batch de destaques: score>={min_score}")
+        
+        processor = StatelessContentProcessor()
+        
+        # Processa conteúdo destacado
+        featured = await processor.process_batch_featured(
+            limit=limit,
+            min_score=min_score,
+            mix_categories=mix_categories
+        )
+        
+        # Converte para formato da API
+        processed_featured = []
+        for item in featured:
+            processed_featured.append(ProcessedArticle(
+                category=item["category"],
+                title=item["title"],
+                description=item["summary"],
+                text=item["content"],
+                summary=item["summary"],
+                keyWords=item["keywords"],
+                original_url=item["original_url"],
+                source=item["source"]
+            ))
+        
+        processing_time = (datetime.now() - start_time).total_seconds()
+        
+        return ArticlesBatchResponse(
+            total_processed=len(processed_featured),
+            articles=processed_featured,
+            processing_time=processing_time,
+            metadata={
+                "quality_threshold": min_score,
+                "featured_content": True,
+                "mixed_categories": mix_categories,
+                "processing_date": datetime.now().isoformat()
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Erro no processamento batch de eventos: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro no processamento: {str(e)}")
+
+@router.post("/events", response_model=EventsBatchResponse)
+async def get_processed_events(
+    limit: int = Query(10, le=30, description="Máximo de eventos"),
+    days_ahead: int = Query(30, description="Eventos dos próximos X dias"),
+    location_filter: Optional[str] = Query(None, description="Filtrar por localização")
+):
+    """
     Processa e retorna eventos para a API NestJS.
     Foco em eventos geek, conventions, lançamentos, etc.
     """
@@ -222,70 +278,6 @@ async def get_processed_featured(
         )
         
     except Exception as e:
-        logger.error(f"Erro no processamento batch de eventos: {e}")
-        raise HTTPException(status_code=500, detail=f"Erro no processamento: {str(e)}")
-
-@router.post("/events", response_model=EventsBatchResponse)
-async def get_processed_events(
-    limit: int = Query(10, le=30, description="Máximo de eventos"),
-    days_ahead: int = Query(30, description="Eventos dos próximos X dias"),
-    location_filter: Optional[str] = Query(None, description="Filtrar por localização")
-):
-    """
-    Processa e retorna conteúdo em destaque para a API NestJS.
-    Apenas conteúdo de alta qualidade e relevância.
-    """
-    start_time = datetime.now()
-    
-    try:
-        logger.info(f"Processando batch de destaques: score>={min_score}")
-        
-        processor = StatelessContentProcessor()
-        
-        # Processa conteúdo destacado
-        featured = await processor.process_batch_featured(
-            limit=limit,
-            min_score=min_score,
-            mix_categories=mix_categories
-        )
-        
-        # Converte para formato da API
-        processed_featured = []
-        for item in featured:
-            processed_featured.append(ProcessedArticle(
-                title=item["title"],
-                slug=item["slug"],
-                content=item["content"],
-                summary=item["summary"],
-                category=item["category"],
-                persona=item["persona"],
-                keywords=item["keywords"],
-                meta_description=item["meta_description"],
-                original_url=item["original_url"],
-                original_source=item["source"],
-                relevance_score=item["relevance_score"],
-                quality_score=item["quality_score"],
-                final_score=item["final_score"],
-                published_at=item["published_at"],
-                processed_at=datetime.now(),
-                featured=True  # Todos são featured por definição
-            ))
-        
-        processing_time = (datetime.now() - start_time).total_seconds()
-        
-        return BatchResponse(
-            total_processed=len(processed_featured),
-            articles=processed_featured,
-            processing_time=processing_time,
-            metadata={
-                "quality_threshold": min_score,
-                "featured_content": True,
-                "mixed_categories": mix_categories,
-                "processing_date": datetime.now().isoformat()
-            }
-        )
-        
-    except Exception as e:
         logger.error(f"Erro no processamento batch de destaques: {e}")
         raise HTTPException(status_code=500, detail=f"Erro no processamento: {str(e)}")
 
@@ -305,17 +297,15 @@ async def batch_health_check():
         
         # Teste de conectividade simples
         # Sem Redis - serviço totalmente stateless
-        r.ping()
         
         return {
             "status": "healthy",
             "mode": "stateless_batch",
             "ai_services": {
-                "openai_configured": bool(settings.OPENAI_API_KEY),
-                "anthropic_configured": bool(settings.ANTHROPIC_API_KEY)
+                "gemini_configured": bool(settings.GOOGLE_API_KEY)
             },
             "sources_configured": sources_count,
-            "cache_available": True,
+            "cache_available": False,
             "ready_for_batch": True,
             "timestamp": datetime.now().isoformat()
         }
