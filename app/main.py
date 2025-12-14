@@ -47,8 +47,7 @@ async def health_check():
         "mode": "stateless",
         "ready_for_batch": True,
         "ai_services": {
-            "openai": bool(settings.OPENAI_API_KEY),
-            "anthropic": bool(settings.ANTHROPIC_API_KEY)
+            "google_gemini": bool(settings.GOOGLE_API_KEY)
         }
     }
 

@@ -13,9 +13,8 @@ class Settings(BaseSettings):
     # O serviço apenas processa e retorna dados
     STATELESS_MODE: bool = True
     
-    # AI Services (OBRIGATÓRIO)
-    OPENAI_API_KEY: str = ""
-    ANTHROPIC_API_KEY: str = ""
+    # AI Services - Google Gemini (OBRIGATÓRIO)
+    GOOGLE_API_KEY: str = ""
     
     # Scraping Configuration
     USER_AGENTS: str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
