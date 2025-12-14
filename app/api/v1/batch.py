@@ -338,3 +338,46 @@ async def list_configured_sources():
         "total_sources": sum(len(sources) for sources in settings.DEFAULT_SOURCES.values()),
         "categories": list(settings.DEFAULT_SOURCES.keys())
     }
+
+@router.get("/debug/scrape/{category}")
+async def debug_scrape_category(category: str):
+    """
+    Endpoint de debug para testar scraping de uma categoria específica.
+    """
+    try:
+        processor = StatelessContentProcessor()
+        sources = processor._get_sources_for_category(category)
+        
+        results = []
+        for source in sources:
+            try:
+                scraper = processor.scraper_factory.create_scraper(
+                    scraper_type="rss",
+                    config={"feed_urls": [source["rss_url"]]}
+                )
+                
+                scraped_content = await scraper.scrape()
+                
+                results.append({
+                    "source_name": source["name"],
+                    "rss_url": source["rss_url"],
+                    "items_found": len(scraped_content),
+                    "sample_titles": [item.get("title", "N/A") for item in scraped_content[:3]]
+                })
+                
+            except Exception as e:
+                results.append({
+                    "source_name": source["name"],
+                    "rss_url": source["rss_url"],
+                    "error": str(e)
+                })
+        
+        return {
+            "category": category,
+            "sources_tested": len(sources),
+            "results": results
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro no debug de scraping: {e}")
+        raise HTTPException(status_code=500, detail=f"Erro: {str(e)}")
