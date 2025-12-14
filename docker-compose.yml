@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  # Serviço de processamento de conteúdo (stateless)
+  content-service:
+    build: .
+    container_name: geek-content-processor
+    ports:
+      - "8000:8000"
+    environment:
+      - STATELESS_MODE=true
+      - DEBUG=false
+      - ENVIRONMENT=production
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+      - geek-network
+    command: redis-server --appendonly yes
+
+  # Celery Worker (opcional)
+  celery-worker:
+    build: .
+    container_name: geek-content-worker
+    command: celery -A app.tasks.content_tasks worker --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/geek_content
+      - REDIS_URL=redis://redis:6379/0
+      - DEBUG=False
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - geek-network
+
+  # Celery Beat (agendador)
+  celery-beat:
+    build: .
+    container_name: geek-content-scheduler
+    command: celery -A app.tasks.content_tasks beat --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/geek_content
+      - REDIS_URL=redis://redis:6379/0
+      - DEBUG=False
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    networks:
+      - geek-network
+
+  # Nginx (proxy reverso)
+  nginx:
+    image: nginx:alpine
+    container_name: geek-content-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks:
+      - geek-network
+
+# Volumes
+volumes:
+  postgres_data:
+  redis_data:
+
+# Networks
+networks:
+  geek-network:
+    driver: bridge

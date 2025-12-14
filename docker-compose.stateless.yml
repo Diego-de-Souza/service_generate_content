@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  # Serviço principal - processamento stateless (SEM Redis, SEM Banco)
+  content-service:
+    build: .
+    container_name: geek-content-processor
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=false
+      - STATELESS_MODE=true
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
